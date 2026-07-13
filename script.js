@@ -13,11 +13,14 @@ const SHAPES = [
     { matrix: [[1, 0], [1, 0], [1, 1]], color: 1 } 
 ];
 
+const COMBO_WORDS = ["AWESOME!", "EXCELLENT!", "SPECTACULAR!", "UNBELIEVABLE!", "WOW!", "OSBLAST!"];
+
 const boardEl = document.getElementById('board');
 const scoreEl = document.getElementById('score');
 const gameOverScreen = document.getElementById('game-over-screen');
 const finalScoreEl = document.getElementById('final-score');
 const restartBtn = document.getElementById('restart-btn');
+const comboTextEl = document.getElementById('combo-text');
 
 function createBoard() {
     boardEl.innerHTML = '';
@@ -27,11 +30,6 @@ function createBoard() {
             cell.classList.add('cell');
             cell.dataset.row = r;
             cell.dataset.col = c;
-            
-            // PC Drag Events
-            cell.addEventListener('dragover', (e) => e.preventDefault());
-            cell.addEventListener('drop', (e) => handleDrop(e, r, c));
-            
             boardEl.appendChild(cell);
         }
     }
@@ -61,24 +59,17 @@ function spawnRackBlocks() {
 
         const miniGrid = document.createElement('div');
         miniGrid.classList.add('mini-grid');
-        miniGrid.setAttribute('draggable', 'true');
         miniGrid.style.gridTemplateRows = `repeat(${randomShape.matrix.length}, 1fr)`;
         miniGrid.style.gridTemplateColumns = `repeat(${randomShape.matrix[0].length}, 1fr)`;
         
-        // PC Sürükleme Başlangıcı
-        miniGrid.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', i);
-        });
-
-        // TABLET/MOBİL Dokunma ile Sürükleme Desteği (Touch Events)
-        addTouchListeners(miniGrid, i);
+        addInteractionListeners(miniGrid, i);
 
         randomShape.matrix.forEach(row => {
             row.forEach(val => {
                 const miniCell = document.createElement('div');
-                miniCell.style.width = '20px';
-                miniCell.style.height = '20px';
-                miniCell.style.borderRadius = '3px';
+                miniCell.style.width = '22px';
+                miniCell.style.height = '22px';
+                miniCell.style.borderRadius = '4px';
                 if (val === 1) {
                     miniCell.classList.add(`color-${randomShape.color}`);
                 } else {
@@ -92,59 +83,105 @@ function spawnRackBlocks() {
     checkGameOver();
 }
 
-// Tabletler için parmak takip mekanizması
-function addTouchListeners(element, slotIndex) {
+// Ortak Giriş Mekanizması (Hem PC faresi hem de Tablet Dokunmatiği için mükemmel hassasiyet)
+function addInteractionListeners(element, slotIndex) {
+    let active = false;
     let startX, startY;
 
-    element.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
-        element.style.position = 'absolute';
+    // Başlama
+    const startDrag = (clientX, clientY) => {
+        if (!currentShapes[slotIndex]) return;
+        active = true;
+        startX = clientX;
+        startY = clientY;
+        element.classList.add('dragging');
+        element.style.position = 'fixed';
         element.style.zIndex = '1000';
-    }, { passive: true });
+        moveElement(clientX, clientY);
+    };
 
-    element.addEventListener('touchmove', (e) => {
-        const touch = e.touches[0];
-        const currentX = touch.clientX;
-        const currentY = touch.clientY;
-        
-        // Bloğu parmağın altında hareket ettir
-        element.style.left = `${currentX - startX}px`;
-        element.style.top = `${currentY - startY}px`;
-    }, { passive: true });
+    // Hareket ve Ön İzleme (Preview) Hesaplama
+    const moveDrag = (clientX, clientY) => {
+        if (!active) return;
+        moveElement(clientX, clientY);
 
-    element.addEventListener('touchend', (e) => {
+        // Parmağın/Farenin altındaki tahta hücresini bul (Yükseltme ofseti düşülerek)
+        clearPreviews();
+        const targetEl = document.elementFromPoint(clientX, clientY - 40); 
+        if (targetEl && targetEl.classList.contains('cell')) {
+            const r = parseInt(targetEl.dataset.row);
+            const c = parseInt(targetEl.dataset.col);
+            showPreview(currentShapes[slotIndex], r, c);
+        }
+    };
+
+    // Bırakma
+    const endDrag = (clientX, clientY) => {
+        if (!active) return;
+        active = false;
+        element.classList.remove('dragging');
         element.style.position = 'static';
-        element.style.left = '0px';
-        element.style.top = '0px';
-        
-        // Parmağın bırakıldığı yerdeki elementi bul
-        const touch = e.changedTouches[0];
-        const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-        
+        clearPreviews();
+
+        const targetEl = document.elementFromPoint(clientX, clientY - 40);
         if (targetEl && targetEl.classList.contains('cell')) {
             const r = parseInt(targetEl.dataset.row);
             const c = parseInt(targetEl.dataset.col);
             executePlacement(slotIndex, r, c);
         }
-    });
+    };
+
+    const moveElement = (x, y) => {
+        element.style.left = `${x - (element.offsetWidth / 2)}px`;
+        element.style.top = `${y - (element.offsetHeight / 2)}px`;
+    };
+
+    // Touch olayları (Tablet)
+    element.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY));
+    window.addEventListener('touchmove', (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY), { passive: false });
+    element.addEventListener('touchend', (e) => endDrag(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+
+    // Mouse olayları (PC)
+    element.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+    window.addEventListener('mouseup', (e) => endDrag(e.clientX, e.clientY));
 }
 
-function handleDrop(e, startRow, startCol) {
-    e.preventDefault();
-    const slotIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    executePlacement(slotIndex, startRow, startCol);
+// Ön izlemeyi tahtada göster
+function showPreview(shape, startRow, startCol) {
+    if (!shape) return;
+    if (startRow + shape.matrix.length > BOARD_SIZE || startCol + shape.matrix[0].length > BOARD_SIZE) return;
+
+    // Sığıyor mu kontrol et
+    for (let r = 0; r < shape.matrix.length; r++) {
+        for (let c = 0; c < shape.matrix[0].length; c++) {
+            if (shape.matrix[r][c] === 1 && boardState[startRow + r][startCol + c] > 0) return;
+        }
+    }
+
+    // Hayalet hücreleri renklendir
+    const cells = boardEl.children;
+    for (let r = 0; r < shape.matrix.length; r++) {
+        for (let c = 0; c < shape.matrix[0].length; c++) {
+            if (shape.matrix[r][c] === 1) {
+                const idx = (startRow + r) * BOARD_SIZE + (startCol + c);
+                cells[idx].classList.add('preview');
+            }
+        }
+    }
 }
 
-// Yerleştirme işlemini hem PC hem Mobil için ortak çalıştıran fonksiyon
+function clearPreviews() {
+    const cells = boardEl.children;
+    for (let i = 0; i < cells.length; i++) {
+        cells[i].classList.remove('preview');
+    }
+}
+
 function executePlacement(slotIndex, startRow, startCol) {
     const shape = currentShapes[slotIndex];
-    if (!shape) return;
+    if (!shape || !canPlaceShape(shape, startRow, startCol)) return;
 
-    if (!canPlaceShape(shape, startRow, startCol)) return;
-
-    // Hücreleri doldur
     for (let r = 0; r < shape.matrix.length; r++) {
         for (let c = 0; c < shape.matrix[0].length; c++) {
             if (shape.matrix[r][c] === 1) {
@@ -174,9 +211,7 @@ function canPlaceShape(shape, startRow, startCol) {
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            if (shape.matrix[r][c] === 1 && boardState[startRow + r][startCol + c] > 0) {
-                return false;
-            }
+            if (shape.matrix[r][c] === 1 && boardState[startRow + r][startCol + c] > 0) return false;
         }
     }
     return true;
@@ -203,12 +238,25 @@ function checkLines() {
     if (rowsToClear.length > 0 || colsToClear.length > 0) {
         updateBoardUI();
         scoreEl.textContent = score;
+        triggerComboText(); // Awesome tetikleme!
     }
+}
+
+// AWESOME / EXCELLENT Ekranda patlatma fonksiyonu
+function triggerComboText() {
+    const randomWord = COMBO_WORDS[Math.floor(Math.random() * COMBO_WORDS.length)];
+    comboTextEl.textContent = randomWord;
+    comboTextEl.classList.remove('hidden');
+    comboTextEl.classList.add('animate');
+
+    setTimeout(() => {
+        comboTextEl.classList.remove('animate');
+        comboTextEl.classList.add('hidden');
+    }, 800);
 }
 
 function checkGameOver() {
     let anyMovePossible = false;
-
     for (let i = 0; i < currentShapes.length; i++) {
         const shape = currentShapes[i];
         if (!shape) continue;

@@ -4,7 +4,7 @@
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     user-select: none;
-    touch-action: none; /* Tablette sürüklerken sayfanın aşağı yukarı kaymasını engeller */
+    touch-action: none;
 }
 
 body {
@@ -34,21 +34,29 @@ body {
     margin-bottom: 15px;
 }
 
-/* Os Sarı, Blast Yeşilimsi/Mavi Neon Kalacak Şekilde Ayarlandı */
 .logo {
     font-size: 2rem;
     font-weight: 900;
     letter-spacing: 1px;
-    color: #ffb703; /* Os kısmı için Canlı Sarı */
+    color: #ffb703;
     text-shadow: 0 0 10px rgba(255, 183, 3, 0.4);
 }
 
 .highlight {
-    color: #00ffcc; /* Blast kısmı aynı kaldı */
+    color: #00ffcc;
     text-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
 }
 
-/* 8x8 Izgara */
+.score-board {
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: #1a1a24;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #00ffcc;
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+}
+
 .board {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -60,20 +68,21 @@ body {
     padding: 8px;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    position: relative;
 }
 
 .cell {
     background-color: #252532;
     border-radius: 4px;
-    transition: background-color 0.2s;
+    transition: background-color 0.1s;
 }
 
-/* Hücreler üzerindeyken veya seçildiğinde efekt */
-.cell.drag-over {
-    background-color: #3d3d52;
+/* ÖN GÖSTERİM (PREVIEW) GÖLGESİ */
+.cell.preview {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 0 8px #fff;
 }
 
-/* OsBlast Canlı Neon Renkleri */
 .cell.filled { border: 1px solid rgba(255,255,255,0.1); }
 .color-1 { background-color: #ff3366; box-shadow: inset 0 0 8px rgba(0,0,0,0.5); } 
 .color-2 { background-color: #00ffcc; box-shadow: inset 0 0 8px rgba(0,0,0,0.5); } 
@@ -81,7 +90,6 @@ body {
 .color-4 { background-color: #9d4edd; box-shadow: inset 0 0 8px rgba(0,0,0,0.5); } 
 .color-5 { background-color: #3a86ff; box-shadow: inset 0 0 8px rgba(0,0,0,0.5); } 
 
-/* Alttaki Blok Seçim Alanı */
 .rack {
     display: flex;
     justify-content: space-between;
@@ -100,20 +108,44 @@ body {
     align-items: center;
     background: #20202c;
     border-radius: 8px;
-    position: relative;
 }
 
 .mini-grid {
     display: grid;
     gap: 2px;
     cursor: grab;
-    position: relative;
-    touch-action: none; /* Önemli: Tablet kaydırmasını önler */
+    transition: transform 0.1s ease;
 }
 
-.mini-grid:active { cursor: grabbing; }
+/* SÜRÜKLENİRKEN BÜYÜME VE HİZALAMA */
+.mini-grid.dragging {
+    cursor: grabbing;
+    transform: scale(1.8) translateY(-40px); /* Blokları parmağın biraz yukarısına taşır ki parmak bloğu kapatmasın */
+    opacity: 0.9;
+    pointer-events: none; /* Sürüklerken alttaki elementlerin algılanmasını sağlar */
+}
 
-/* Game Over Ekranı */
+/* Combo / Tebrik Yazısı Efekti */
+.combo-text {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    font-size: 3rem;
+    font-weight: 900;
+    color: #ffb703;
+    text-shadow: 0 0 20px #ff3366, 0 0 40px #ffb703;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.combo-text.animate {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
 .overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;

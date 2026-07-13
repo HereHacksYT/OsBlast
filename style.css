@@ -1,0 +1,104 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+}
+
+body {
+    background-color: #121214;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 450px;
+    width: 100%;
+}
+
+.header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.score-board {
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: #202024;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #ff007f;
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+}
+
+/* 8x8 Izgara */
+.board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 4px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #202024;
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.cell {
+    background-color: #2a2a30;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+/* Blok Renkleri */
+.cell.filled { border: 1px solid rgba(255,255,255,0.1); }
+.color-1 { background-color: #ff3366; } /* Kırmızı */
+.color-2 { background-color: #33ccff; } /* Mavi */
+.color-3 { background-color: #33ff66; } /* Yeşil */
+.color-4 { background-color: #ffcc33; } /* Sarı */
+.color-5 { background-color: #b533ff; } /* Mor */
+
+/* Alttaki Blok Seçim Alanı */
+.rack {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 20px;
+    background: #1a1a1e;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.rack-slot {
+    width: 30%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #252529;
+    border-radius: 8px;
+    position: relative;
+}
+
+/* Sürüklenen mini blok matrisi */
+.mini-grid {
+    display: grid;
+    gap: 2px;
+    cursor: grab;
+}
+
+.mini-grid:active {
+    cursor: grabbing;
+}

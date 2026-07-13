@@ -27,8 +27,11 @@ function createBoard() {
             cell.classList.add('cell');
             cell.dataset.row = r;
             cell.dataset.col = c;
+            
+            // PC Drag Events
             cell.addEventListener('dragover', (e) => e.preventDefault());
             cell.addEventListener('drop', (e) => handleDrop(e, r, c));
+            
             boardEl.appendChild(cell);
         }
     }
@@ -49,7 +52,6 @@ function updateBoardUI() {
 }
 
 function spawnRackBlocks() {
-    let emptySlots = 0;
     for (let i = 0; i < 3; i++) {
         const slot = document.getElementById(`slot-${i}`);
         slot.innerHTML = '';
@@ -63,9 +65,13 @@ function spawnRackBlocks() {
         miniGrid.style.gridTemplateRows = `repeat(${randomShape.matrix.length}, 1fr)`;
         miniGrid.style.gridTemplateColumns = `repeat(${randomShape.matrix[0].length}, 1fr)`;
         
+        // PC Sürükleme Başlangıcı
         miniGrid.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', i);
         });
+
+        // TABLET/MOBİL Dokunma ile Sürükleme Desteği (Touch Events)
+        addTouchListeners(miniGrid, i);
 
         randomShape.matrix.forEach(row => {
             row.forEach(val => {
@@ -86,15 +92,59 @@ function spawnRackBlocks() {
     checkGameOver();
 }
 
+// Tabletler için parmak takip mekanizması
+function addTouchListeners(element, slotIndex) {
+    let startX, startY;
+
+    element.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        element.style.position = 'absolute';
+        element.style.zIndex = '1000';
+    }, { passive: true });
+
+    element.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const currentX = touch.clientX;
+        const currentY = touch.clientY;
+        
+        // Bloğu parmağın altında hareket ettir
+        element.style.left = `${currentX - startX}px`;
+        element.style.top = `${currentY - startY}px`;
+    }, { passive: true });
+
+    element.addEventListener('touchend', (e) => {
+        element.style.position = 'static';
+        element.style.left = '0px';
+        element.style.top = '0px';
+        
+        // Parmağın bırakıldığı yerdeki elementi bul
+        const touch = e.changedTouches[0];
+        const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        if (targetEl && targetEl.classList.contains('cell')) {
+            const r = parseInt(targetEl.dataset.row);
+            const c = parseInt(targetEl.dataset.col);
+            executePlacement(slotIndex, r, c);
+        }
+    });
+}
+
 function handleDrop(e, startRow, startCol) {
     e.preventDefault();
     const slotIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    executePlacement(slotIndex, startRow, startCol);
+}
+
+// Yerleştirme işlemini hem PC hem Mobil için ortak çalıştıran fonksiyon
+function executePlacement(slotIndex, startRow, startCol) {
     const shape = currentShapes[slotIndex];
     if (!shape) return;
 
     if (!canPlaceShape(shape, startRow, startCol)) return;
 
-    // Yerleştir
+    // Hücreleri doldur
     for (let r = 0; r < shape.matrix.length; r++) {
         for (let c = 0; c < shape.matrix[0].length; c++) {
             if (shape.matrix[r][c] === 1) {
@@ -157,14 +207,12 @@ function checkLines() {
 }
 
 function checkGameOver() {
-    // Kalan bloklardan en az biri panoya sığıyor mu?
     let anyMovePossible = false;
 
     for (let i = 0; i < currentShapes.length; i++) {
         const shape = currentShapes[i];
-        if (!shape) continue; // Bu slot zaten boşaltılmışsa geç
+        if (!shape) continue;
 
-        // Panodaki her hücreyi kontrol et
         for (let r = 0; r < BOARD_SIZE; r++) {
             for (let c = 0; c < BOARD_SIZE; c++) {
                 if (canPlaceShape(shape, r, c)) {

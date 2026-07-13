@@ -4,6 +4,7 @@
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     user-select: none;
+    touch-action: none; /* Tablette sürüklerken sayfanın aşağı yukarı kaymasını engeller */
 }
 
 body {
@@ -14,6 +15,7 @@ body {
     align-items: center;
     min-height: 100vh;
     padding: 10px;
+    overflow: hidden;
 }
 
 .game-container {
@@ -32,25 +34,18 @@ body {
     margin-bottom: 15px;
 }
 
+/* Os Sarı, Blast Yeşilimsi/Mavi Neon Kalacak Şekilde Ayarlandı */
 .logo {
     font-size: 2rem;
     font-weight: 900;
     letter-spacing: 1px;
+    color: #ffb703; /* Os kısmı için Canlı Sarı */
+    text-shadow: 0 0 10px rgba(255, 183, 3, 0.4);
 }
 
 .highlight {
-    color: #00ffcc;
+    color: #00ffcc; /* Blast kısmı aynı kaldı */
     text-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
-}
-
-.score-board {
-    font-size: 1.2rem;
-    font-weight: bold;
-    background: #1a1a24;
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid #00ffcc;
-    box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
 }
 
 /* 8x8 Izgara */
@@ -71,6 +66,11 @@ body {
     background-color: #252532;
     border-radius: 4px;
     transition: background-color 0.2s;
+}
+
+/* Hücreler üzerindeyken veya seçildiğinde efekt */
+.cell.drag-over {
+    background-color: #3d3d52;
 }
 
 /* OsBlast Canlı Neon Renkleri */
@@ -100,12 +100,15 @@ body {
     align-items: center;
     background: #20202c;
     border-radius: 8px;
+    position: relative;
 }
 
 .mini-grid {
     display: grid;
     gap: 2px;
     cursor: grab;
+    position: relative;
+    touch-action: none; /* Önemli: Tablet kaydırmasını önler */
 }
 
 .mini-grid:active { cursor: grabbing; }
@@ -119,7 +122,6 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 10;
-    transition: opacity 0.3s ease;
 }
 
 .hidden { display: none !important; }
@@ -139,11 +141,6 @@ body {
     margin-bottom: 10px;
 }
 
-.game-over-box p {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-}
-
 .game-over-box button {
     background: #00ffcc;
     color: #000;
@@ -153,7 +150,4 @@ body {
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.1s;
 }
-
-.game-over-box button:hover { transform: scale(1.05); }
